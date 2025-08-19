@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Patrick Goldinger
+ * Copyright (C) 2022-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,10 +76,10 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
 
     override val providerId = ProviderId
 
-    init {
+//    init {
 //        // FIXME: observeForever only callable on the main thread.
 //        extensionManager.languagePacks.observeForever { refreshLanguagePacks() }
-    }
+//    }
 
     private fun refreshLanguagePacks() {
         scope.launch { create() }

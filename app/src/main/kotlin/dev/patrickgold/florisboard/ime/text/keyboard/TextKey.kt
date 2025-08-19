@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package dev.patrickgold.florisboard.ime.text.keyboard
 
-import dev.patrickgold.florisboard.app.florisPreferenceModel
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.AbstractKeyData
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.Key
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
-import dev.patrickgold.florisboard.ime.keyboard.computeIconResId
+import dev.patrickgold.florisboard.ime.keyboard.computeImageVector
 import dev.patrickgold.florisboard.ime.keyboard.computeLabel
 import dev.patrickgold.florisboard.ime.popup.MutablePopupSet
 import dev.patrickgold.florisboard.ime.popup.PopupMapping
@@ -30,7 +30,7 @@ import dev.patrickgold.florisboard.ime.popup.PopupSet
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
-import dev.patrickgold.florisboard.lib.kotlin.lowercase
+import dev.patrickgold.florisboard.lib.lowercase
 
 class TextKey(override val data: AbstractKeyData) : Key(data) {
     var computedData: KeyData = TextKeyData.UNSPECIFIED
@@ -228,7 +228,7 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
     fun computeLabelsAndDrawables(evaluator: ComputingEvaluator) {
         label = evaluator.computeLabel(computedData)
         hintedLabel = null
-        foregroundDrawableId = evaluator.computeIconResId(computedData)
+        foregroundImageVector = evaluator.computeImageVector(computedData)
 
         val data = computedData
         if (data.type == KeyType.NUMERIC && evaluator.keyboard.mode == KeyboardMode.PHONE) {
@@ -246,7 +246,7 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
                 else -> null
             }
         } else if (!data.isSpaceKey() || data.type == KeyType.NUMERIC) {
-            val prefs by florisPreferenceModel()
+            val prefs by FlorisPreferenceStore
             computedPopups.getPopupKeys(prefs.keyboard.keyHintConfiguration()).hint.let { hintData ->
                 if (hintData?.isSpaceKey() == false) {
                     hintedLabel = hintData.asString(isForDisplay = true)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,28 @@
 package dev.patrickgold.florisboard.ime.onehanded
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.app.florisPreferenceModel
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
-import dev.patrickgold.florisboard.ime.theme.FlorisImeTheme
+import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.florisboard.lib.compose.stringRes
-import dev.patrickgold.florisboard.lib.snygg.ui.snyggBackground
-import dev.patrickgold.florisboard.lib.snygg.ui.solidColor
+import org.florisboard.lib.compose.stringRes
+import kotlinx.coroutines.launch
+import org.florisboard.lib.snygg.ui.SnyggColumn
+import org.florisboard.lib.snygg.ui.SnyggIcon
+import org.florisboard.lib.snygg.ui.SnyggIconButton
 
 @Composable
 fun RowScope.OneHandedPanel(
@@ -40,38 +46,55 @@ fun RowScope.OneHandedPanel(
     panelSide: OneHandedMode,
     weight: Float,
 ) {
-    val prefs by florisPreferenceModel()
+    val prefs by FlorisPreferenceStore
+    val scope = rememberCoroutineScope()
     val inputFeedbackController = LocalInputFeedbackController.current
-    val oneHandedPanelStyle = FlorisImeTheme.style.get(FlorisImeUi.OneHandedPanel)
-    Column(
+
+    SnyggColumn(
+        FlorisImeUi.OneHandedPanel.elementName,
         modifier = modifier
             .weight(weight)
-            .snyggBackground(oneHandedPanelStyle),
+            .height(FlorisImeSizing.imeUiHeight()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly,
     ) {
-        IconButton(onClick = {
-            inputFeedbackController.keyPress()
-            prefs.keyboard.oneHandedMode.set(OneHandedMode.OFF)
-        }) {
-            Icon(
-                painter = painterResource(R.drawable.ic_zoom_out_map),
+        SnyggIconButton(
+            FlorisImeUi.OneHandedPanelButton.elementName,
+            onClick = {
+                scope.launch {
+                    inputFeedbackController.keyPress()
+                    prefs.keyboard.oneHandedModeEnabled.set(false)
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f),
+        ) {
+            SnyggIcon(
+                modifier = Modifier.fillMaxWidth(),
+                imageVector = Icons.Default.ZoomOutMap,
                 contentDescription = stringRes(R.string.one_handed__close_btn_content_description),
-                tint = oneHandedPanelStyle.foreground.solidColor(),
             )
         }
-        IconButton(onClick = {
-            inputFeedbackController.keyPress()
-            prefs.keyboard.oneHandedMode.set(panelSide)
-        }) {
-            Icon(
-                painter = painterResource(
-                    if (panelSide == OneHandedMode.START) {
-                        R.drawable.ic_keyboard_arrow_left
-                    } else {
-                        R.drawable.ic_keyboard_arrow_right
-                    }
-                ),
+        SnyggIconButton(
+            FlorisImeUi.OneHandedPanelButton.elementName,
+            onClick = {
+                scope.launch {
+                    inputFeedbackController.keyPress()
+                    prefs.keyboard.oneHandedMode.set(panelSide)
+                }
+            },
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) {
+            SnyggIcon(
+                modifier = Modifier.fillMaxWidth(),
+                imageVector = if (panelSide == OneHandedMode.START) {
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft
+                } else {
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight
+                },
                 contentDescription = stringRes(
                     if (panelSide == OneHandedMode.START) {
                         R.string.one_handed__move_start_btn_content_description
@@ -79,7 +102,6 @@ fun RowScope.OneHandedPanel(
                         R.string.one_handed__move_end_btn_content_description
                     }
                 ),
-                tint = oneHandedPanelStyle.foreground.solidColor(),
             )
         }
     }

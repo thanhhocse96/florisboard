@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,15 @@ data class Subtype(
             popupMapping = extCorePopupMapping("en"),
             layoutMap = SubtypeLayoutMap(characters = extCoreLayout("qwerty")),
         )
+    }
+
+    /**
+     * Returns an accumulated list of all locales of this subtype.
+     */
+    fun locales(): List<FlorisLocale> {
+        val locales = mutableListOf(primaryLocale)
+        locales.addAll(secondaryLocales)
+        return locales
     }
 
     /**

@@ -1,33 +1,35 @@
+/*
+ * Copyright (C) 2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package dev.patrickgold.florisboard.ime.nlp
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
-import dev.patrickgold.florisboard.appContext
-import dev.patrickgold.florisboard.assetManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
-import dev.patrickgold.florisboard.lib.android.copy
-import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.ext.Extension
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponent
-import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.ext.ExtensionEditor
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
-import dev.patrickgold.florisboard.lib.io.FlorisRef
-import dev.patrickgold.florisboard.lib.io.FsDir
-import dev.patrickgold.florisboard.lib.io.parentDir
-import dev.patrickgold.florisboard.lib.io.subFile
-import dev.patrickgold.florisboard.lib.kotlin.tryOrNull
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import org.florisboard.lib.kotlin.io.FsDir
+import org.florisboard.lib.kotlin.io.subFile
 
 @Serializable
 class LanguagePackComponent(

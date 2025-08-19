@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.Unicode
-import dev.patrickgold.florisboard.lib.kotlin.lowercase
-import dev.patrickgold.florisboard.lib.kotlin.uppercase
+import dev.patrickgold.florisboard.lib.lowercase
+import dev.patrickgold.florisboard.lib.uppercase
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -44,7 +44,7 @@ import kotlinx.serialization.Transient
  */
 @Serializable
 @SerialName("text_key")
-class TextKeyData(
+data class TextKeyData(
     override val type: KeyType = KeyType.CHARACTER,
     override val code: Int = KeyCode.UNSPECIFIED,
     override val label: String = "",
@@ -62,16 +62,7 @@ class TextKeyData(
     }
 
     override fun asString(isForDisplay: Boolean): String {
-        return buildString {
-            if (isForDisplay || code == KeyCode.URI_COMPONENT_TLD || code < KeyCode.SPACE) {
-                if (Unicode.isNonSpacingMark(code) && !label.startsWith("◌")) {
-                    append("◌")
-                }
-                append(label)
-            } else {
-                try { appendCodePoint(code) } catch (_: Throwable) { }
-            }
-        }
+        return asString(this, isForDisplay)
     }
 
     override fun toString(): String {
@@ -130,6 +121,7 @@ class TextKeyData(
                 CLIPBOARD_CLEAR_HISTORY,
                 CLIPBOARD_CLEAR_FULL_HISTORY,
                 CLIPBOARD_CLEAR_PRIMARY_CLIP,
+                TOGGLE_COMPACT_LAYOUT,
                 COMPACT_LAYOUT_TO_LEFT,
                 COMPACT_LAYOUT_TO_RIGHT,
                 UNDO,
@@ -345,6 +337,12 @@ class TextKeyData(
             label = "clipboard_clear_primary_clip",
         )
 
+        /** Predefined key data for [KeyCode.TOGGLE_COMPACT_LAYOUT] */
+        val TOGGLE_COMPACT_LAYOUT = TextKeyData(
+            type = KeyType.SYSTEM_GUI,
+            code = KeyCode.TOGGLE_COMPACT_LAYOUT,
+            label = "toggle_compact_layout",
+        )
         /** Predefined key data for [KeyCode.COMPACT_LAYOUT_TO_LEFT] */
         val COMPACT_LAYOUT_TO_LEFT = TextKeyData(
             type = KeyType.SYSTEM_GUI,
@@ -420,6 +418,12 @@ class TextKeyData(
             type = KeyType.FUNCTION,
             code = KeyCode.SYSTEM_INPUT_METHOD_PICKER,
             label = "system_input_method_picker",
+        )
+        /** Predefined key data for [KeyCode.SHOW_SUBTYPE_PICKER] */
+        val SHOW_SUBTYPE_PICKER = TextKeyData(
+            type = KeyType.FUNCTION,
+            code = KeyCode.SHOW_SUBTYPE_PICKER,
+            label = "subtype_picker",
         )
         /** Predefined key data for [KeyCode.SYSTEM_PREV_INPUT_METHOD] */
         val SYSTEM_PREV_INPUT_METHOD = TextKeyData(
@@ -541,16 +545,7 @@ class AutoTextKeyData(
     }
 
     override fun asString(isForDisplay: Boolean): String {
-        return buildString {
-            if (isForDisplay || code == KeyCode.URI_COMPONENT_TLD || code < KeyCode.SPACE) {
-                if (Unicode.isNonSpacingMark(code) && !label.startsWith("◌")) {
-                    append("◌")
-                }
-                append(label)
-            } else {
-                try { appendCodePoint(code) } catch (_: Throwable) { }
-            }
-        }
+        return asString(this, isForDisplay)
     }
 
     override fun toString(): String {
@@ -614,5 +609,18 @@ class MultiTextKeyData(
 
     override fun toString(): String {
         return "${MultiTextKeyData::class.simpleName} { type=$type code=$code label=\"$label\" groupId=$groupId }"
+    }
+}
+
+internal fun asString(data: KeyData, isForDisplay: Boolean) : String {
+    return buildString {
+        if (isForDisplay || data.code == KeyCode.URI_COMPONENT_TLD || data.code < KeyCode.SPACE) {
+            if (Unicode.isNonSpacingMark(data.code) && !data.label.startsWith("◌")) {
+                append("◌")
+            }
+            append(data.label)
+        } else {
+            try { appendCodePoint(data.code) } catch (_: Throwable) { }
+        }
     }
 }

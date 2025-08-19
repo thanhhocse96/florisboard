@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package dev.patrickgold.florisboard.lib
 
 import android.content.Context
 import dev.patrickgold.florisboard.extensionManager
-import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
-import dev.patrickgold.florisboard.lib.kotlin.titlecase
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -219,7 +217,7 @@ class FlorisLocale private constructor(val base: Locale) {
      */
     val supportsCapitalization: Boolean
         get() = when (language) {
-            "zh", "ko", "th" -> false
+            "zh", "ko", "th", "bn", "hi" -> false
             else -> true
         }
 
@@ -361,4 +359,15 @@ class FlorisLocale private constructor(val base: Locale) {
             return fromTag(decoder.decodeString())
         }
     }
+}
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun String.lowercase(locale: FlorisLocale): String = this.lowercase(locale.base)
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun String.uppercase(locale: FlorisLocale): String = this.uppercase(locale.base)
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun String.titlecase(locale: FlorisLocale = FlorisLocale.ROOT): String {
+    return this.replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale.base) else it.toString() }
 }

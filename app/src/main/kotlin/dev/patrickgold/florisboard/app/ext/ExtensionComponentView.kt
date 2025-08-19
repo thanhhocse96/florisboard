@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Patrick Goldinger
+ * Copyright (C) 2022-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ListItem
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,13 +40,13 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackComponent
 import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponent
-import dev.patrickgold.florisboard.lib.compose.FlorisIconButton
-import dev.patrickgold.florisboard.lib.compose.FlorisOutlinedBox
-import dev.patrickgold.florisboard.lib.compose.FlorisTextButton
-import dev.patrickgold.florisboard.lib.compose.stringRes
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponent
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
+import org.florisboard.lib.compose.FlorisIconButton
+import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisTextButton
+import org.florisboard.lib.compose.stringRes
 
 @Composable
 fun ExtensionComponentNoneFoundView() {
@@ -80,21 +81,18 @@ fun ExtensionComponentView(
             when (component) {
                 is ThemeExtensionComponent -> {
                     val text = remember(
-                        component.authors, component.isNightTheme, component.isBorderless,
-                        component.isMaterialYouAware, component.stylesheetPath(),
+                        component.authors, component.isNightTheme, component.stylesheetPath(),
                     ) {
                         buildString {
                             appendLine("authors = ${component.authors}")
                             appendLine("isNightTheme = ${component.isNightTheme}")
-                            appendLine("isBorderless = ${component.isBorderless}")
-                            appendLine("isMaterialYouAware = ${component.isMaterialYouAware}")
                             append("stylesheetPath = ${component.stylesheetPath()}")
                         }
                     }
                     Text(
                         text = text,
-                        style = MaterialTheme.typography.body2,
-                        color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = LocalContentColor.current,
                     )
                 }
                 is LanguagePackComponent -> {
@@ -109,8 +107,8 @@ fun ExtensionComponentView(
                     }
                     Text(
                         text = text,
-                        style = MaterialTheme.typography.body2,
-                        color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = LocalContentColor.current,
                     )
                 }
                 else -> { }
@@ -125,10 +123,10 @@ fun ExtensionComponentView(
                 if (onDeleteBtnClick != null) {
                     FlorisTextButton(
                         onClick = onDeleteBtnClick,
-                        icon = painterResource(R.drawable.ic_delete),
+                        icon = Icons.Default.Delete,
                         text = stringRes(R.string.action__delete),
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colors.error,
+                            contentColor = MaterialTheme.colorScheme.error,
                         ),
                     )
                 }
@@ -136,7 +134,7 @@ fun ExtensionComponentView(
                 if (onEditBtnClick != null) {
                     FlorisTextButton(
                         onClick = onEditBtnClick,
-                        icon = painterResource(R.drawable.ic_edit),
+                        icon = Icons.Default.Edit,
                         text = stringRes(R.string.action__edit),
                     )
                 }
@@ -145,7 +143,6 @@ fun ExtensionComponentView(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun <T : ExtensionComponent> ExtensionComponentListView(
     modifier: Modifier = Modifier,
@@ -156,19 +153,19 @@ fun <T : ExtensionComponent> ExtensionComponentListView(
 ) {
     Column(modifier = modifier) {
         ListItem(
-            text = { Text(
+            headlineContent = { Text(
                 text = title,
-                color = MaterialTheme.colors.secondary,
+                color = MaterialTheme.colorScheme.secondary,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             ) },
-            trailing = if (onCreateBtnClick != null) {
+            trailingContent = if (onCreateBtnClick != null) {
                 @Composable {
                     FlorisIconButton(
                         onClick = onCreateBtnClick,
-                        icon = painterResource(R.drawable.ic_add),
-                        iconColor = MaterialTheme.colors.secondary,
+                        icon = Icons.Default.Add,
+                        iconColor = MaterialTheme.colorScheme.secondary,
                     )
                 }
             } else { null },

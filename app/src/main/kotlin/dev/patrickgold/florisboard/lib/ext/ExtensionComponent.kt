@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package dev.patrickgold.florisboard.lib.ext
 
 import androidx.compose.runtime.saveable.Saver
-import dev.patrickgold.florisboard.lib.kotlin.tryOrNull
 import dev.patrickgold.jetpref.datastore.model.PreferenceSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -25,6 +24,7 @@ import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import org.florisboard.lib.kotlin.tryOrNull
 
 /**
  * An extension component, typically a layout, theme, file, etc. descriptor.

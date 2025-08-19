@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ enum class ImeUiMode(val value: Int) {
     CLIPBOARD(2);
 
     companion object {
-        fun fromInt(int: Int) = values().firstOrNull { it.value == int } ?: TEXT
+        fun fromInt(int: Int) = entries.firstOrNull { it.value == int } ?: TEXT
     }
 
     fun toInt(): Int = value

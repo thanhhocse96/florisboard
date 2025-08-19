@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Patrick Goldinger
+ * Copyright (C) 2022-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package dev.patrickgold.florisboard.ime.nlp
 
 import android.icu.text.BreakIterator
 import dev.patrickgold.florisboard.lib.FlorisLocale
-import dev.patrickgold.florisboard.lib.kotlin.GuardedByLock
-import dev.patrickgold.florisboard.lib.kotlin.guardedByLock
 import io.github.reactivecircus.cache4k.Cache
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
+import org.florisboard.lib.kotlin.GuardedByLock
+import org.florisboard.lib.kotlin.guardedByLock
 
 open class BreakIteratorGroup {
     private val charInstances = Cache.Builder().build<FlorisLocale, GuardedByLock<BreakIterator>>()
@@ -32,19 +30,13 @@ open class BreakIteratorGroup {
     private val sentenceInstances = Cache.Builder().build<FlorisLocale, GuardedByLock<BreakIterator>>()
 
     suspend fun <R> character(locale: FlorisLocale, action: (BreakIterator) -> R): R {
-        contract {
-            callsInPlace(action, InvocationKind.EXACTLY_ONCE)
-        }
         val instance = charInstances.get(locale) {
             guardedByLock { BreakIterator.getCharacterInstance(locale.base) }
         }
-        return instance.withLock { action(it) }
+        return instance.withLock(null, action)
     }
 
     suspend fun <R> word(locale: FlorisLocale, action: (BreakIterator) -> R): R {
-        contract {
-            callsInPlace(action, InvocationKind.EXACTLY_ONCE)
-        }
         val instance = wordInstances.get(locale) {
             guardedByLock { BreakIterator.getWordInstance(locale.base) }
         }
@@ -52,9 +44,6 @@ open class BreakIteratorGroup {
     }
 
     suspend fun <R> sentence(locale: FlorisLocale, action: (BreakIterator) -> R): R {
-        contract {
-            callsInPlace(action, InvocationKind.EXACTLY_ONCE)
-        }
         val instance = sentenceInstances.get(locale) {
             guardedByLock { BreakIterator.getSentenceInstance(locale.base) }
         }

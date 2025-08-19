@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,16 @@
 package dev.patrickgold.florisboard.ime.clipboard
 
 import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import dev.patrickgold.florisboard.app.florisPreferenceModel
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
-import dev.patrickgold.florisboard.lib.android.AndroidClipboardManager
-import dev.patrickgold.florisboard.lib.android.AndroidClipboardManager_OnPrimaryClipChangedListener
-import dev.patrickgold.florisboard.lib.android.setOrClearPrimaryClip
-import dev.patrickgold.florisboard.lib.android.showShortToast
-import dev.patrickgold.florisboard.lib.android.systemService
-import dev.patrickgold.florisboard.lib.kotlin.tryOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,6 +39,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.florisboard.lib.android.AndroidClipboardManager
+import org.florisboard.lib.android.AndroidClipboardManager_OnPrimaryClipChangedListener
+import org.florisboard.lib.android.setOrClearPrimaryClip
+import org.florisboard.lib.android.showShortToast
+import org.florisboard.lib.android.showShortToastSync
+import org.florisboard.lib.android.systemService
+import org.florisboard.lib.kotlin.tryOrNull
 import java.io.Closeable
 
 /**
@@ -91,7 +91,7 @@ class ClipboardManager(
         }
     }
 
-    private val prefs by florisPreferenceModel()
+    private val prefs by FlorisPreferenceStore
     private val appContext by context.appContext()
     private val editorInstance by context.editorInstance()
     private val systemClipboardManager = context.systemService(AndroidClipboardManager::class)
@@ -110,7 +110,9 @@ class ClipboardManager(
     val primaryClipFlow = _primaryClipFlow.asStateFlow()
     inline var primaryClip
         get() = primaryClipFlow.value
-        private set(v) { _primaryClipFlow.value = v }
+        private set(v) {
+            _primaryClipFlow.value = v
+        }
 
     init {
         systemClipboardManager.addPrimaryClipChangedListener(this)
@@ -224,7 +226,14 @@ class ClipboardManager(
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = history().all.firstOrNull { it.type == ItemType.TEXT && it.text == newItem.text }
             if (historyElement != null) {
-                moveToTheBeginning(historyElement, newItem)
+                moveToTheBeginning(
+                    oldItem = historyElement,
+                    newItem = if (historyElement.isPinned) {
+                        newItem.copy(isPinned = true)
+                    } else {
+                        newItem
+                    }
+                )
             } else {
                 insertClip(newItem)
             }
@@ -245,14 +254,20 @@ class ClipboardManager(
     }
 
     private fun enforceExpiryDate(clipHistory: ClipboardHistory) {
+        val itemsToRemove = mutableSetOf<ClipboardItem>()
         if (prefs.clipboard.cleanUpOld.get()) {
             val nonPinnedItems = clipHistory.recent + clipHistory.other
             val expiryTime = System.currentTimeMillis() - (prefs.clipboard.cleanUpAfter.get() * 60 * 1000)
-            val itemsToRemove = nonPinnedItems.filter { it.creationTimestampMs < expiryTime }
-            if (itemsToRemove.isNotEmpty()) {
-                ioScope.launch {
-                    clipHistoryDao?.delete(itemsToRemove)
-                }
+            itemsToRemove.addAll(nonPinnedItems.filter { it.creationTimestampMs < expiryTime })
+        }
+        if (prefs.clipboard.autoCleanSensitive.get()) {
+            val sensitiveData = clipHistory.all.filter { it.isSensitive }
+            val expiryTime = System.currentTimeMillis() - (prefs.clipboard.autoCleanSensitiveAfter.get() * 1000)
+            itemsToRemove.addAll(sensitiveData.filter { it.creationTimestampMs < expiryTime })
+        }
+        if (itemsToRemove.isNotEmpty()) {
+            ioScope.launch {
+                clipHistoryDao?.delete(itemsToRemove.toList())
             }
         }
     }
@@ -271,6 +286,9 @@ class ClipboardManager(
         }
     }
 
+    /**
+     * Clears all unpinned items from the clipboard history
+     */
     fun clearHistory() {
         ioScope.launch {
             for (item in history().all) {
@@ -280,12 +298,32 @@ class ClipboardManager(
         }
     }
 
+    /**
+     * Clears the full clipboard history
+     */
     fun clearFullHistory() {
         ioScope.launch {
             for (item in history().all) {
                 item.close(appContext)
             }
             clipHistoryDao?.deleteAll()
+        }
+    }
+
+
+    /**
+     * Restore the clipboard history from a [List]
+     *
+     * @param items the [ClipboardItem] list with the new items
+     */
+    fun restoreHistory(items: List<ClipboardItem>) {
+        ioScope.launch {
+            val currentHistory = this@ClipboardManager.history().all
+            for (item in items) {
+                if (!currentHistory.map { it.copy(id = 0) }.contains(item.copy(id = 0))) {
+                    this@ClipboardManager.insertClip(item.copy(id = 0))
+                }
+            }
         }
     }
 
@@ -309,7 +347,7 @@ class ClipboardManager(
 
     fun unpinClip(item: ClipboardItem) {
         ioScope.launch {
-            clipHistoryDao?.update(item.copy(isPinned =  false))
+            clipHistoryDao?.update(item.copy(isPinned = false))
         }
     }
 
@@ -317,7 +355,7 @@ class ClipboardManager(
         val editorInstance by appContext.editorInstance()
         editorInstance.commitClipboardItem(item).also { result ->
             if (!result) {
-                appContext.showShortToast("Failed to paste item.")
+                appContext.showShortToastSync("Failed to paste item.")
             }
         }
     }

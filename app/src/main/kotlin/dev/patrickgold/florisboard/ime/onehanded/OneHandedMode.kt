@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,10 @@
 
 package dev.patrickgold.florisboard.ime.onehanded
 
-import androidx.compose.runtime.Composable
-import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.lib.compose.stringRes
-import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
-
 /**
  * Static object which contains all possible one-handed mode strings.
  */
 enum class OneHandedMode {
-    OFF,
     START,
     END;
-
-    companion object {
-        @Composable
-        fun listEntries() = listPrefEntries {
-            entry(
-                key = OFF,
-                label = stringRes(R.string.enum__one_handed_mode__off),
-            )
-            entry(
-                key = START,
-                label = stringRes(R.string.enum__one_handed_mode__start),
-            )
-            entry(
-                key = END,
-                label = stringRes(R.string.enum__one_handed_mode__end),
-            )
-        }
-    }
 }

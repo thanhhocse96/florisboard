@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Patrick Goldinger
+ * Copyright (C) 2022-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,20 @@
 package dev.patrickgold.florisboard.ime.clipboard.provider
 
 import android.content.ClipData
+import android.content.ClipDescription.EXTRA_IS_REMOTE_DEVICE
+import android.content.ClipDescription.EXTRA_IS_SENSITIVE
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.BaseColumns
+import android.provider.MediaStore.Images.Media
 import android.provider.OpenableColumns
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.database.getStringOrNull
 import androidx.lifecycle.LiveData
+import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
@@ -33,13 +39,22 @@ import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.RenameColumn
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Update
-import dev.patrickgold.florisboard.lib.android.query
-import dev.patrickgold.florisboard.lib.kotlin.tryOrNull
+import androidx.room.migration.AutoMigrationSpec
+import dev.patrickgold.florisboard.R
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import org.florisboard.lib.android.AndroidVersion
+import org.florisboard.lib.android.UriSerializer
+import org.florisboard.lib.android.query
+import org.florisboard.lib.android.stringRes
+import org.florisboard.lib.kotlin.tryOrNull
 
 private const val CLIPBOARD_HISTORY_TABLE = "clipboard_history"
 private const val CLIPBOARD_FILES_TABLE = "clipboard_files"
@@ -51,7 +66,7 @@ enum class ItemType(val value: Int) {
 
     companion object {
         fun fromInt(value : Int) : ItemType {
-            return values().first { it.value == value }
+            return entries.first { it.value == value }
         }
     }
 }
@@ -62,17 +77,25 @@ enum class ItemType(val value: Int) {
  * If type == ItemType.IMAGE there must be a uri set
  * if type == ItemType.TEXT there must be a text set
  */
+@Serializable
 @Entity(tableName = CLIPBOARD_HISTORY_TABLE)
-data class ClipboardItem(
+data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = BaseColumns._ID, index = true)
     var id: Long = 0,
     val type: ItemType,
     val text: String?,
+    @Serializable(with = UriSerializer::class)
     val uri: Uri?,
     val creationTimestampMs: Long,
     val isPinned: Boolean,
     val mimeTypes: Array<String>,
+    @EncodeDefault
+    @ColumnInfo(name = "is_sensitive", defaultValue = "0")
+    val isSensitive: Boolean = false,
+    @EncodeDefault
+    @ColumnInfo(name= "is_remote_device", defaultValue = "0")
+    val isRemoteDevice: Boolean = false,
 ) {
     companion object {
         /**
@@ -106,6 +129,18 @@ data class ClipboardItem(
                 dataItem?.uri != null && data.description.hasMimeType("image/*") -> ItemType.IMAGE
                 dataItem?.uri != null && data.description.hasMimeType("video/*") -> ItemType.VIDEO
                 else -> ItemType.TEXT
+            }
+
+            val isSensitive = if (AndroidVersion.ATLEAST_API33_T) {
+                data.description?.extras?.getBoolean(EXTRA_IS_SENSITIVE) ?: false
+            } else {
+                false
+            }
+
+            val isRemoteDevice = if (AndroidVersion.ATLEAST_API34_U) {
+                data.description?.extras?.getBoolean(EXTRA_IS_REMOTE_DEVICE) ?: false
+            } else {
+                false
             }
 
             val uri = if (type == ItemType.IMAGE || type == ItemType.VIDEO) {
@@ -146,7 +181,21 @@ data class ClipboardItem(
                 }
             }
 
-            return ClipboardItem(0, type, text, uri, System.currentTimeMillis(), false, mimeTypes)
+            return ClipboardItem(0, type, text, uri, System.currentTimeMillis(), false, mimeTypes, isSensitive, isRemoteDevice)
+        }
+    }
+
+    @Composable
+    inline fun displayText(): String {
+        val context = LocalContext.current
+        return displayText(context)
+    }
+
+    fun displayText(context: Context): String {
+        return if (isSensitive) {
+            context.stringRes(R.string.clipboard__sensitive_clip_content)
+        } else {
+            stringRepresentation()
         }
     }
 
@@ -193,6 +242,7 @@ data class ClipboardItem(
         if (uri != other.uri) return false
         if (creationTimestampMs != other.creationTimestampMs) return false
         if (!mimeTypes.contentEquals(other.mimeTypes)) return false
+        if (isSensitive != other.isSensitive) return false
 
         return true
     }
@@ -204,6 +254,7 @@ data class ClipboardItem(
         result = 31 * result + (uri?.hashCode() ?: 0)
         result = 31 * result + creationTimestampMs.hashCode()
         result = 31 * result + mimeTypes.contentHashCode()
+        result = 31 * result + isSensitive.hashCode()
         return result
     }
 
@@ -281,14 +332,36 @@ interface ClipboardHistoryDao {
     @Query("DELETE FROM $CLIPBOARD_HISTORY_TABLE")
     fun deleteAll()
 
+    @Query("DELETE FROM $CLIPBOARD_HISTORY_TABLE WHERE type = :type")
+    fun deleteAllFromType(type: ItemType)
+
     @Query("DELETE FROM $CLIPBOARD_HISTORY_TABLE WHERE NOT isPinned")
     fun deleteAllUnpinned()
 }
 
-@Database(entities = [ClipboardItem::class], version = 2)
+@Database(
+    entities = [ClipboardItem::class],
+    version = 4,
+    autoMigrations = [
+        AutoMigration(from = 2, to = 4),
+        AutoMigration(from = 3, to = 4, spec = ClipboardHistoryDatabase.MIGRATE_3_TO_4::class),
+    ],
+)
 @TypeConverters(Converters::class)
 abstract class ClipboardHistoryDatabase : RoomDatabase() {
     abstract fun clipboardItemDao(): ClipboardHistoryDao
+
+    @RenameColumn(
+        tableName = CLIPBOARD_HISTORY_TABLE,
+        fromColumnName = "isSensitive",
+        toColumnName = "is_sensitive",
+    )
+    @RenameColumn(
+        tableName = CLIPBOARD_HISTORY_TABLE,
+        fromColumnName = "isRemoteDevice",
+        toColumnName = "is_remote_device",
+    )
+    class MIGRATE_3_TO_4 : AutoMigrationSpec
 
     companion object {
         fun new(context: Context): ClipboardHistoryDatabase {
@@ -302,11 +375,13 @@ abstract class ClipboardHistoryDatabase : RoomDatabase() {
     }
 }
 
+@Serializable
 @Entity(tableName = CLIPBOARD_FILES_TABLE)
 data class ClipboardFileInfo(
     @PrimaryKey @ColumnInfo(name=BaseColumns._ID, index=true) val id: Long,
     @ColumnInfo(name=OpenableColumns.DISPLAY_NAME) val displayName: String,
     @ColumnInfo(name=OpenableColumns.SIZE) val size: Long,
+    @ColumnInfo(name=Media.ORIENTATION) val orientation: Int,
     val mimeTypes: Array<String>,
 ) {
     override fun equals(other: Any?): Boolean {
@@ -340,6 +415,9 @@ interface ClipboardFilesDao {
     @Query("SELECT * FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:uid)")
     fun getCursorById(uid: Long) : Cursor
 
+    @Query("SELECT (:projection) FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:uid)")
+    fun getCurserByIdWithColums(uid: Long, projection: String) : Cursor
+
     @Query("DELETE FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:id)")
     fun delete(id: Long)
 
@@ -350,7 +428,7 @@ interface ClipboardFilesDao {
     fun getAll(): List<ClipboardFileInfo>
 }
 
-@Database(entities = [ClipboardFileInfo::class], version = 1)
+@Database(entities = [ClipboardFileInfo::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class ClipboardFilesDatabase : RoomDatabase() {
     abstract fun clipboardFilesDao() : ClipboardFilesDao

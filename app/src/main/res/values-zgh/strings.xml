@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="app_name">FlorisBoard</string>
     <!-- One-handed strings -->
     <!-- Media strings -->
     <string name="media__tab__emojis" comment="Tab description for emojis in the media UI">ⵉⵎⵓⵊⵉⵜⵏ</string>
@@ -24,6 +25,7 @@
     <string name="about__title" comment="Title of About activity">ⵅⴼ</string>
     <!-- Setup UI strings -->
     <string name="setup__title" comment="Title of Setup">ⴱⵔⵔⴽ!</string>
+    <!-- Physical keyboard -->
     <!-- Back up & Restore -->
     <!-- Crash Dialog strings -->
     <string name="crash_dialog__close" comment="Label of Close button in crash dialog">ⵔⴳⵍ</string>

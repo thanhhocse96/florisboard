@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,19 +41,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
-import dev.patrickgold.florisboard.app.florisPreferenceModel
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import dev.patrickgold.florisboard.lib.compose.florisScrollbar
-import dev.patrickgold.florisboard.lib.compose.stringRes
 import dev.patrickgold.jetpref.datastore.model.observeAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import org.florisboard.lib.compose.florisScrollbar
+import org.florisboard.lib.compose.stringRes
 
 const val SelectLocaleScreenResultLanguageTag = "SelectLocaleScreen.languageTag"
 
@@ -60,7 +61,7 @@ fun SelectLocaleScreen() = FlorisScreen {
     title = stringRes(R.string.settings__localization__subtype_select_locale)
     scrollable = false
 
-    val prefs by florisPreferenceModel()
+    val prefs by FlorisPreferenceStore
     val navController = LocalNavController.current
 
     val displayLanguageNamesIn by prefs.localization.displayLanguageNamesIn.observeAsState()
@@ -99,13 +100,13 @@ fun SelectLocaleScreen() = FlorisScreen {
                 placeholder = { Text(stringRes(R.string.settings__localization__subtype_search_locale_placeholder)) },
                 leadingIcon = {
                     Icon(
-                        painter = painterResource(R.drawable.ic_search),
+                        imageVector = Icons.Default.Search,
                         contentDescription = null,
                     )
                 },
                 singleLine = true,
                 shape = RectangleShape,
-                colors = TextFieldDefaults.textFieldColors(
+                colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,

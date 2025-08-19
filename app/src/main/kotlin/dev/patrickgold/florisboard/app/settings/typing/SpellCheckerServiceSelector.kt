@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,25 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.lib.android.AndroidSettings
-import dev.patrickgold.florisboard.lib.android.launchActivity
-import dev.patrickgold.florisboard.lib.compose.FlorisCanvasIcon
-import dev.patrickgold.florisboard.lib.compose.FlorisErrorCard
-import dev.patrickgold.florisboard.lib.compose.FlorisSimpleCard
-import dev.patrickgold.florisboard.lib.compose.FlorisWarningCard
-import dev.patrickgold.florisboard.lib.compose.stringRes
+import dev.patrickgold.florisboard.lib.util.launchActivity
+import org.florisboard.lib.android.AndroidSettings
+import org.florisboard.lib.compose.FlorisCanvasIcon
+import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisSimpleCard
+import org.florisboard.lib.compose.FlorisWarningCard
+import org.florisboard.lib.compose.observeAsState
+import org.florisboard.lib.compose.stringRes
 
 @Composable
 fun SpellCheckerServiceSelector(florisSpellCheckerEnabled: MutableState<Boolean>) {
@@ -104,7 +106,7 @@ fun SpellCheckerServiceSelector(florisSpellCheckerEnabled: MutableState<Boolean>
                                 modifier = Modifier
                                     .padding(end = 8.dp)
                                     .requiredSize(32.dp),
-                                painter = painterResource(R.drawable.ic_help_outline),
+                                imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                                 contentDescription = null,
                             )
                         }

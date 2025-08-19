@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Patrick Goldinger
+ * Copyright (C) 2022-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import android.icu.text.BreakIterator
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
+import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
 
 /**
  * Base interface for any NLP provider implementation. NLP providers maintain their own internal state and only receive
@@ -216,7 +217,13 @@ interface SuggestionProvider : NlpProvider {
             val end = it.last()
             val isWord = it.ruleStatus != BreakIterator.WORD_NONE
             if (isWord) {
-                val start = it.previous()
+                val start = it.previous().let { pos ->
+                    // Include Emoji indicator in local composing. This is required so that emoji suggestion indicator'
+                    // can be detected in the composing text.
+                    (pos - 1).takeIf { updatedPos ->
+                        textBeforeSelection.getOrNull(updatedPos) == EmojiSuggestionType.LEADING_COLON.prefix.first()
+                    } ?: pos
+                }
                 EditorRange(start, end)
             } else {
                 EditorRange.Unspecified

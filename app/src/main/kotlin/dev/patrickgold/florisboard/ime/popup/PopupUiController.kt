@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Patrick Goldinger
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,36 +22,40 @@ import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.DefaultComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.Key
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
-import dev.patrickgold.florisboard.ime.keyboard.computeIconResId
+import dev.patrickgold.florisboard.ime.keyboard.computeImageVector
 import dev.patrickgold.florisboard.ime.keyboard.computeLabel
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSet
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyHintConfiguration
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKey
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
+import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.lib.FlorisRect
 import dev.patrickgold.florisboard.lib.toIntOffset
 
 @Composable
 fun rememberPopupUiController(
     key1: Any?,
+    key2: Any?,
     boundsProvider: (key: Key) -> FlorisRect,
     isSuitableForBasicPopup: (key: Key) -> Boolean,
     isSuitableForExtendedPopup: (key: Key) -> Boolean,
 ): PopupUiController {
     val context = LocalContext.current
-    return remember(key1) {
+    return remember(key1, key2) {
         PopupUiController(context, boundsProvider, isSuitableForBasicPopup, isSuitableForExtendedPopup)
     }
 }
@@ -76,9 +80,8 @@ class PopupUiController(
     private var baseRenderInfo by mutableStateOf<BaseRenderInfo?>(null)
     private var extRenderInfo by mutableStateOf<ExtRenderInfo?>(null)
 
-    private var activeElementIndex by mutableStateOf(-1)
+    private var activeElementIndex by mutableIntStateOf(-1)
     var evaluator: ComputingEvaluator = DefaultComputingEvaluator
-    var fontSizeMultiplier: Float = 1.0f
     var keyHintConfiguration: KeyHintConfiguration = KeyHintConfiguration.HINTS_DISABLED
 
     /** Is true if the preview popup is visible to the user, else false */
@@ -265,7 +268,7 @@ class PopupUiController(
             elements[rowIndex].add(Element(
                 data = keyData,
                 label = evaluator.computeLabel(keyData),
-                iconResId = evaluator.computeIconResId(keyData),
+                icon = evaluator.computeImageVector(keyData),
                 orderedIndex = uiIndex,
                 adjustedIndex = adjustedIndex,
             ))
@@ -445,13 +448,17 @@ class PopupUiController(
 
     @Composable
     fun RenderPopups(): Unit = with(LocalDensity.current) {
+        val attributes = mapOf(
+            FlorisImeUi.Attr.Mode to evaluator.keyboard.mode.toString(),
+            FlorisImeUi.Attr.ShiftState to evaluator.state.inputShiftState.toString(),
+        )
         baseRenderInfo?.let { renderInfo ->
             PopupBaseBox(
                 modifier = Modifier
                     .requiredSize(renderInfo.bounds.size.toDpSize())
                     .absoluteOffset { renderInfo.bounds.topLeft.toIntOffset() },
+                attributes = attributes,
                 key = renderInfo.key,
-                fontSizeMultiplier = fontSizeMultiplier,
                 shouldIndicateExtendedPopups = renderInfo.shouldIndicateExtendedPopups && extRenderInfo == null,
             )
         }
@@ -463,8 +470,8 @@ class PopupUiController(
                 modifier = Modifier
                     .requiredSize(renderInfo.bounds.size.toDpSize())
                     .absoluteOffset { renderInfo.bounds.topLeft.toIntOffset() },
+                attributes = attributes,
                 elements = renderInfo.elements,
-                fontSizeMultiplier = fontSizeMultiplier,
                 elemArrangement = if (renderInfo.anchorLeft) {
                     Arrangement.Start
                 } else {
@@ -497,7 +504,7 @@ class PopupUiController(
     data class Element(
         val data: KeyData,
         val label: String?,
-        val iconResId: Int?,
+        val icon: ImageVector?,
         val orderedIndex: Int,
         val adjustedIndex: Int,
     )
